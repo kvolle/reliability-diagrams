@@ -2,7 +2,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def compute_calibration(true_labels, pred_labels, confidences, num_bins=10):
     """Collects predictions into bins used to draw a reliability diagram.
 
@@ -152,7 +151,7 @@ def _confidence_histogram_subplot(ax, bin_data,
 
 def _reliability_diagram_combined(bin_data, 
                                   draw_ece, draw_bin_importance, draw_averages, 
-                                  title, figsize, dpi, return_fig):
+                                  title, figsize, dpi, return_fig, hist_upside_down=True):
     """Draws a reliability diagram and confidence histogram using the output
     from compute_calibration()."""
     figsize = (figsize[0], figsize[0] * 1.4)
@@ -168,13 +167,17 @@ def _reliability_diagram_combined(bin_data,
 
     # Draw the confidence histogram upside down.
     orig_counts = bin_data["counts"]
-    bin_data["counts"] = -bin_data["counts"]
+    if hist_upside_down:
+        bin_data["counts"] = -bin_data["counts"]
+   
     _confidence_histogram_subplot(ax[1], bin_data, draw_averages, title="")
-    bin_data["counts"] = orig_counts
-
-    # Also negate the ticks for the upside-down histogram.
+    # Also negate the ticks for the upside-down histogram (if necessary, otherwise this doesn't change anything).
     new_ticks = np.abs(ax[1].get_yticks()).astype(np.int)
     ax[1].set_yticklabels(new_ticks)    
+
+    bin_data["counts"] = orig_counts
+
+    
 
     plt.show()
 
@@ -184,7 +187,7 @@ def _reliability_diagram_combined(bin_data,
 def reliability_diagram(true_labels, pred_labels, confidences, num_bins=10,
                         draw_ece=True, draw_bin_importance=False, 
                         draw_averages=True, title="Reliability Diagram", 
-                        figsize=(6, 6), dpi=72, return_fig=False):
+                        figsize=(6, 6), dpi=72, return_fig=False, hist_upside_down=False):
     """Draws a reliability diagram and confidence histogram in a single plot.
     
     First, the model's predictions are divided up into bins based on their
@@ -228,7 +231,7 @@ def reliability_diagram(true_labels, pred_labels, confidences, num_bins=10,
     bin_data = compute_calibration(true_labels, pred_labels, confidences, num_bins)
     return _reliability_diagram_combined(bin_data, draw_ece, draw_bin_importance,
                                          draw_averages, title, figsize=figsize, 
-                                         dpi=dpi, return_fig=return_fig)
+                                         dpi=dpi, return_fig=return_fig, hist_upside_down=hist_upside_down)
 
 
 def reliability_diagrams(results, num_bins=10,
